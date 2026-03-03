@@ -6,6 +6,7 @@
 <title>Spor Branş Kayıt Sistemi</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   :root {
     --bg: #0a0f1e;
@@ -639,57 +640,126 @@ function closeModal() {
 function exportPDF() {
   if(!currentStudent) return;
   const s = currentStudent;
-  const {jsPDF} = window.jspdf;
-  const doc = new jsPDF({unit:'mm',format:'a4'});
   const bd = s.birthDay ? `${s.birthDay} ${MONTHS[s.birthMonth]} ${s.birthYear}` : '—';
+  const avatarSrc = imgSrc(s);
+  const now = new Date().toLocaleString('tr-TR');
 
-  // Header
-  doc.setFillColor(0,212,170); doc.rect(0,0,210,42,'F');
-  doc.setTextColor(0,0,0); doc.setFont('helvetica','bold'); doc.setFontSize(20);
-  doc.text('SPORCU KAYIT FORMU', 20,18);
-  doc.setFontSize(12); doc.text(`${s.firstName} ${s.lastName}`, 20,30);
-  doc.setFontSize(8); doc.setFont('helvetica','normal');
-  doc.text(`Kayıt Tarihi: ${s.registeredAt}`, 20,38);
+  // Dinamik olarak gizli bir HTML sayfası oluşturup html2canvas ile yakala
+  const wrap = document.createElement('div');
+  wrap.id = 'pdf-render-wrap';
+  wrap.style.cssText = `
+    position:fixed; left:-9999px; top:0;
+    width:794px; background:#fff; font-family:'Sora',sans-serif;
+    color:#111; font-size:13px; line-height:1.5;
+  `;
 
-  const src = imgSrc(s);
-  if(src) { try { doc.addImage(src,'JPEG',163,5,34,34); } catch(e){} }
+  const field = (label, value, warn=false) => `
+    <div style="background:${warn?'#fff5f0':'#f4fdf9'};border-radius:8px;padding:12px 14px;flex:1;min-width:220px">
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${warn?'#c0392b':'#00897b'};margin-bottom:4px">${label}</div>
+      <div style="font-size:13px;font-weight:600;color:${warn?'#c0392b':'#111'}">${value||'—'}</div>
+    </div>`;
 
-  let y=54;
-  const sec=(t)=>{ doc.setFillColor(232,252,248); doc.rect(14,y-5,182,11,'F'); doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(0,130,100); doc.text(t,18,y+2); y+=13; };
-  const r2=(l1,v1,l2,v2,w1=false,w2=false)=>{
-    doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(120,140,160);
-    doc.text(l1.toUpperCase(),20,y); doc.text(l2.toUpperCase(),110,y);
-    doc.setFont('helvetica','normal'); doc.setFontSize(11);
-    doc.setTextColor(w1?180:30,w1?60:30,w1?0:30); doc.text(v1||'—',20,y+7);
-    doc.setTextColor(w2?180:30,w2?60:30,w2?0:30); doc.text(v2||'—',110,y+7);
-    y+=18;
-  };
-  const r1=(l,v,w=false)=>{
-    doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(120,140,160); doc.text(l.toUpperCase(),20,y);
-    doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(w?180:30,w?60:30,w?0:30);
-    const lines=doc.splitTextToSize(v||'—',170); doc.text(lines,20,y+7); y+=10+(lines.length-1)*6;
-  };
+  const section = (title) => `
+    <div style="background:#e8fdf7;border-left:4px solid #00d4aa;padding:8px 14px;margin:20px 0 12px;border-radius:0 6px 6px 0">
+      <span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:#00897b">${title}</span>
+    </div>`;
 
-  sec('KİŞİSEL BİLGİLER');
-  r2('Doğum Tarihi',bd,'Doğum Yeri',s.birthPlace||'—');
-  r2('Kan Grubu',s.blood||'—','Yaş',calcAge(s.birthYear,s.birthMonth,s.birthDay));
-  sec('FİZİKSEL BİLGİLER');
-  r2('Boy',s.height?s.height+' cm':'—','Kilo',s.weight?s.weight+' kg':'—');
-  sec('SAĞLIK BİLGİLERİ');
-  r2('İlaç Durumu',s.medication||'—','Alerji Durumu',s.allergy||'—',s.medication==='Var',s.allergy==='Var');
-  if(s.medicationDetail) r1('İlaç Detayı',s.medicationDetail,true);
-  if(s.allergyDetail) r1('Alerji Detayı',s.allergyDetail,true);
-  sec('VELİ BİLGİLERİ');
-  r2('Veli Adı',s.parent||'—','Telefon',s.phone||'—');
-  if(s.address) r1('Adres',s.address);
-  if(s.notes) r1('Notlar',s.notes);
+  const avatarHTML = avatarSrc
+    ? `<img src="${avatarSrc}" style="width:80px;height:80px;border-radius:12px;object-fit:cover;border:3px solid #00d4aa" crossorigin="anonymous">`
+    : `<div style="width:80px;height:80px;border-radius:12px;background:linear-gradient(135deg,#00d4aa,#006655);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#fff">${s.firstName[0]}${s.lastName[0]}</div>`;
 
-  doc.setFillColor(245,245,245); doc.rect(0,273,210,24,'F');
-  doc.setTextColor(160,160,160); doc.setFontSize(8); doc.setFont('helvetica','normal');
-  doc.text(`SporeKayıt Sistemi  |  ${new Date().toLocaleString('tr-TR')}`,20,284);
+  const allergyBadge = s.allergy==='Var' ? `<span style="background:#fff0eb;border:1px solid #ff6b35;color:#c0392b;border-radius:100px;padding:3px 10px;font-size:10px;font-weight:700;margin-right:6px">⚠ Alerji Var</span>` : '';
+  const medBadge = s.medication==='Var' ? `<span style="background:#e8f4ff;border:1px solid #3498db;color:#1a6bbf;border-radius:100px;padding:3px 10px;font-size:10px;font-weight:700">Ilac Kullaniyor</span>` : '';
 
-  doc.save(`${s.firstName}_${s.lastName}_sporcu.pdf`);
-  showToast('📄 PDF indirildi!');
+  wrap.innerHTML = `
+    <!-- HEADER -->
+    <div style="background:#00d4aa;padding:24px 32px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:2px;color:rgba(0,0,0,0.6);text-transform:uppercase;margin-bottom:4px">Spor Brans Kayit Sistemi</div>
+        <div style="font-size:22px;font-weight:800;color:#000;letter-spacing:-0.5px">SPORCU KAYIT FORMU</div>
+        <div style="font-size:13px;font-weight:600;color:rgba(0,0,0,0.7);margin-top:4px">${s.firstName} ${s.lastName}</div>
+      </div>
+      ${avatarHTML}
+    </div>
+
+    <!-- BODY -->
+    <div style="padding:24px 32px">
+
+      <!-- İsim + rozetler -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+        <div>
+          <div style="font-size:20px;font-weight:800;color:#111">${s.firstName} ${s.lastName}</div>
+          <div style="font-size:12px;color:#666;margin-top:2px">${calcAge(s.birthYear,s.birthMonth,s.birthDay)} · ${bd}</div>
+          <div style="margin-top:8px">${allergyBadge}${medBadge}</div>
+        </div>
+      </div>
+
+      ${section('Kisisel Bilgiler')}
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        ${field('Dogum Tarihi', bd)}
+        ${field('Dogum Yeri', s.birthPlace)}
+        ${field('Kan Grubu', s.blood)}
+        ${field('Yas', calcAge(s.birthYear,s.birthMonth,s.birthDay))}
+      </div>
+
+      ${section('Fiziksel Bilgiler')}
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        ${field('Boy', s.height ? s.height+' cm' : '—')}
+        ${field('Kilo', s.weight ? s.weight+' kg' : '—')}
+      </div>
+
+      ${section('Saglik Bilgileri')}
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        ${field('Ilac Durumu', s.medication, s.medication==='Var')}
+        ${field('Alerji Durumu', s.allergy, s.allergy==='Var')}
+      </div>
+      ${s.medicationDetail ? `<div style="margin-top:10px;display:flex;gap:10px">${field('Ilac Detayi', s.medicationDetail, true)}</div>` : ''}
+      ${s.allergyDetail ? `<div style="margin-top:10px;display:flex;gap:10px">${field('Alerji Detayi', s.allergyDetail, true)}</div>` : ''}
+
+      ${section('Veli Bilgileri')}
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        ${field('Veli Adi', s.parent)}
+        ${field('Telefon', s.phone)}
+      </div>
+      ${s.address ? `<div style="margin-top:10px">${field('Adres', s.address)}</div>` : ''}
+      ${s.notes ? `<div style="margin-top:10px">${field('Notlar', s.notes)}</div>` : ''}
+
+    </div>
+
+    <!-- FOOTER -->
+    <div style="background:#f5f5f5;padding:12px 32px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #e0e0e0;font-size:9px;color:#999">
+      <span>SporeKayit Sistemi</span>
+      <span>Kayit: ${s.registeredAt}  |  Olusturulma: ${now}</span>
+    </div>
+  `;
+
+  document.body.appendChild(wrap);
+  showToast('⏳ PDF hazırlanıyor...');
+
+  setTimeout(() => {
+    html2canvas(wrap, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      width: 794,
+      windowWidth: 794,
+    }).then(canvas => {
+      const {jsPDF} = window.jspdf;
+      const doc = new jsPDF({ unit:'mm', format:'a4', orientation:'portrait' });
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const pdfW = 210;
+      const pdfH = Math.min(297, (canvas.height * pdfW) / canvas.width);
+      doc.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
+      doc.save(`${s.firstName}_${s.lastName}_sporcu.pdf`);
+      document.body.removeChild(wrap);
+      showToast('📄 PDF indirildi!');
+    }).catch(err => {
+      document.body.removeChild(wrap);
+      showToast('❌ PDF oluşturulamadı.');
+      console.error(err);
+    });
+  }, 300);
 }
 
 function showToast(msg) {

@@ -1,275 +1,793 @@
+
+bir proje planım var ama neyi nasıl yapacağımıza sen karar ver. tamamen ücretsiz olmasını istiyorum.
+küçük yaş spor branş grubu için verileri topladığım bir sistem istiyorum. 
+uygulama veya link her neyse veli ile paylaşacağım
+veli; öğrencinin bilgilerini ve fotoğrafını yükleyecek sisteme.
+bu işlemi tüm etkinlik grubu için yapacağım için birden fazla kişi bu şekilde verileri dolduracak
+ben de istediğim zaman bu doldurulan verileri görüntüleyebilmeliyim ve öğrenci adını arattığımda fotoğraflı şekilde velinin yazdığı bilgilerin gelmesini istiyorum.
+kod yazma şimdilik. önce tartışıp anlaşalım. beni anladığından emin olmak istiyorum ve izleyeceğimiz yol için planını bekliyorum.
+github pages kullanmak istiyorum bunun için.
+örnek olarak bir web app tasarımı yapabilir misin. html kodlarını yaz ve online olarak önizleyebileyim. öğrenci bilgilerini ve resimleri rastgele olarak ayarlayabilirsin. yönetici kısmına şifreyle giriş olmalı bence. veli; boy, kilo, doğum tarihi(gün,ay,yıl şeklinde),doğum yeri, kullandığı ilaç var mı, alerjisi var mı, kan grubu gibi bilgileri de girebilmeli. yönetici kısmındaki kartlar çok güzel olmuş. bu kartlara tıklanabilmeli ve detayı görüntülenebilmeli, isteğe göre pdf olarak dışarı paylaşma butonu olmalı.
+
+Show more
+10:09
+
+Viewed 2 files
+Viewed 2 files
+Harika, seni tam anladım. Şimdi önce güzel bir önizleme yapayım — rastgele verilerle dolu, tam işlevsel bir demo.
+
+Planı kısaca özetleyeyim:
+
+Veli tarafı: Link paylaşırsın → form doldurur, fotoğraf yükler
+Yönetici tarafı: Şifreli giriş → kartlar, arama, detay modal, PDF export
+GitHub Pages: Tamamen ücretsiz, statik hosting — veri için Firebase Firestore (ücretsiz tier) kullanacağız
+Şimdi demo önizlemeyi yazıyorum:
+
+
+Created a file, read a file
+Created a file, read a file
+Demo hazır! Önizlemeye tıklayarak görebilirsin. İşte tam olarak ne içeriyor:
+
+Demo Şifresi: admin123
+
+Veli Tarafı (Kayıt Formu):
+
+Ad, soyad, doğum tarihi (gün/ay/yıl), doğum yeri
+Boy, kilo, kan grubu
+İlaç ve alerji durumu — "Var" seçilince detay alanı açılıyor
+Veli adı, telefon, notlar
+Fotoğraf yükleme
+Yönetici Paneli:
+
+Şifreli giriş
+İstatistik kartları (toplam sporcu, alerji/ilaç sayısı)
+İsimle arama
+Her öğrenci kartına tıklayınca detay modal açılıyor
+PDF İndir butonu — fotoğraflı, renkli, düzenli format
+Gerçek sisteme geçiş planı (GitHub Pages + Firebase):
+
+Şu an veriler tarayıcının localStorage'ında duruyor (demo için). Gerçek çok kullanıcılı sistemde:
+
+Firebase Firestore — ücretsiz, gerçek zamanlı veritabanı
+Firebase Storage — fotoğraflar için
+GitHub Pages — statik HTML hosting, tamamen ücretsiz
+Bu 3'ünü birleştirince; bir veli formu doldurunca sen admin panelinden anında görürsün. Devam etmemi ister misin?
+
+Spor kayit sistemi
+Code · HTML 
+demo modumuzda biraz daha iyileştirmeler yapalım, tam mutabık olduğumuzda ileri aşaöaya geçeriz.
+"Fiziksel Bilgiler" kısmında boy ve kilo değerlerini yazmalı değil de açılır kısımdan seçmeli şekilde yapalım.
+"Veli Bilgileri" kısmına "adres" bilgilerini de eklemek için düzenleme yapalım.
+demo olduğu için kayıtlı sporcular için rastgele profil resimleri ekler misin
+
+tüm kodu yaz güncellenmiş haliyle lütfen
+
+10:18
+
+Created 2 files, ran a command, read a file
+Created 2 files, ran a command, read a file
+Güncellemeler hazır! İşte yapılan değişiklikler:
+
+Boy & Kilo → Artık açılır menüden seçiliyor. Boy 80–220 cm, kilo 15–150 kg aralığında. Sağ tarafta cm / kg etiketi gösteriyor.
+
+Adres alanı → Veli Bilgileri bölümüne eklendi, hem formda hem modal detayında hem de PDF çıktısında görünüyor.
+
+Profil fotoğrafları → Demo sporculara Picsum'dan sabit seed'li rastgele fotoğraflar eklendi (her açılışta aynı kişiye aynı fotoğraf geliyor). Fotoğraf yüklenemezse baş harfli renkli avatar otomatik devreye giriyor.
+
+Başka bir şey eklemek veya değiştirmek ister misin?
+
+Spor kayit sistemi
+Code · HTML 
+
+
+Want to be notified when Claude responds?
+
+
+
+Claude is AI and can make mistakes. Please double-check responses.
+Spor kayit sistemi · HTML
+Copy
+
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sporcu Bilgi Sistemi</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    
-    <style>
-        /* Genel Tasarım */
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 0; color: #333; }
-        
-        /* Üst Menü */
-        header { background-color: #1a1a1a; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        header h1 { margin: 0; font-size: 1.5rem; letter-spacing: 1px; }
-        nav button { background: none; border: 1px solid white; color: white; padding: 0.5rem 1rem; cursor: pointer; border-radius: 4px; margin-left: 10px; transition: 0.3s; font-weight: bold; }
-        nav button:hover { background: white; color: #1a1a1a; }
-        
-        .container { max-width: 1000px; margin: 2rem auto; padding: 0 1rem; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spor Branş Kayıt Sistemi</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0f1e;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --accent: #00d4aa;
+    --accent2: #ff6b35;
+    --text: #e8edf5;
+    --muted: #6b7a99;
+    --border: rgba(255,255,255,0.07);
+    --card-glow: 0 0 40px rgba(0,212,170,0.08);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Sora',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+  .screen { display:none; min-height:100vh; }
+  .screen.active { display:flex; flex-direction:column; }
+  nav {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 32px; background:rgba(10,15,30,0.95);
+    border-bottom:1px solid var(--border); backdrop-filter:blur(20px);
+    position:sticky; top:0; z-index:100;
+  }
+  .nav-logo { display:flex; align-items:center; gap:10px; font-weight:800; font-size:1.1rem; letter-spacing:-0.5px; }
+  .nav-logo span { color:var(--accent); }
+  .nav-logo .icon { width:36px; height:36px; background:var(--accent); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; }
+  .nav-tabs { display:flex; gap:4px; background:var(--surface); border-radius:12px; padding:4px; }
+  .nav-tab { padding:8px 20px; border-radius:9px; font-size:0.85rem; font-weight:600; cursor:pointer; border:none; background:transparent; color:var(--muted); transition:all 0.2s; }
+  .nav-tab.active,.nav-tab:hover { background:var(--accent); color:#000; }
+  .btn { padding:14px 28px; border-radius:12px; font-size:0.95rem; font-weight:700; cursor:pointer; border:none; transition:all 0.2s; font-family:'Sora',sans-serif; display:inline-flex; align-items:center; gap:8px; }
+  .btn-primary { background:var(--accent); color:#000; }
+  .btn-primary:hover { background:#00f0c0; transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,212,170,0.35); }
+  .btn-outline { background:transparent; color:var(--text); border:1px solid var(--border); }
+  .btn-outline:hover { border-color:var(--accent); color:var(--accent); }
+  .btn-sm { padding:8px 16px; font-size:0.82rem; border-radius:8px; }
 
-        /* Veli Form Alanı */
-        .form-section { background: white; padding: 2.5rem; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-width: 600px; margin: auto; }
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-        .form-group { margin-bottom: 1.2rem; }
-        .form-group.full-width { grid-column: 1 / -1; }
-        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: bold; color: #444; font-size: 0.9rem; }
-        .form-group input, .form-group select { width: 100%; padding: 0.8rem; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 1rem; }
-        
-        .submit-btn { background-color: #1a1a1a; color: white; border: none; padding: 1rem; width: 100%; font-size: 1.1rem; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; margin-top: 1rem; }
-        .submit-btn:hover { background-color: #333; }
+  /* HERO */
+  #home { align-items:center; justify-content:center; background:radial-gradient(ellipse 80% 60% at 50% 20%, rgba(0,212,170,0.12) 0%, transparent 60%), var(--bg); }
+  .hero { text-align:center; max-width:680px; padding:60px 24px; }
+  .hero-badge { display:inline-flex; align-items:center; gap:8px; background:rgba(0,212,170,0.12); border:1px solid rgba(0,212,170,0.3); color:var(--accent); padding:6px 16px; border-radius:100px; font-size:0.78rem; font-weight:600; letter-spacing:1px; text-transform:uppercase; margin-bottom:28px; }
+  .hero h1 { font-size:clamp(2rem,5vw,3.2rem); font-weight:800; line-height:1.15; letter-spacing:-1.5px; margin-bottom:20px; }
+  .hero h1 em { color:var(--accent); font-style:normal; }
+  .hero p { color:var(--muted); font-size:1.05rem; line-height:1.7; margin-bottom:40px; }
+  .hero-btns { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
 
-        /* Şifre Giriş Ekranı */
-        .login-section { display: none; background: white; padding: 2.5rem; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-width: 400px; margin: auto; text-align: center; }
-        .login-section input { width: 100%; padding: 0.8rem; margin: 1rem 0; border: 1px solid #ddd; border-radius: 6px; text-align: center; font-size: 1.2rem; }
+  /* FORM */
+  .form-container { max-width:640px; width:100%; margin:40px auto; padding:0 24px 60px; }
+  .form-header { margin-bottom:32px; }
+  .form-header h2 { font-size:1.8rem; font-weight:800; letter-spacing:-0.8px; margin-bottom:8px; }
+  .form-header p { color:var(--muted); font-size:0.92rem; }
+  .form-section { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:24px; margin-bottom:16px; }
+  .form-section-title { font-size:0.75rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--accent); margin-bottom:20px; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .form-row.triple { grid-template-columns:1fr 1fr 1fr; }
+  .form-group { display:flex; flex-direction:column; gap:6px; }
+  label { font-size:0.8rem; font-weight:600; color:var(--muted); }
+  input,select,textarea { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:11px 14px; color:var(--text); font-family:'Sora',sans-serif; font-size:0.9rem; transition:border 0.2s; width:100%; }
+  input:focus,select:focus,textarea:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(0,212,170,0.1); }
+  select option { background:var(--surface2); }
+  textarea { resize:vertical; min-height:80px; }
 
-        /* Yönetici Paneli Alanı */
-        .admin-section { display: none; }
-        .search-bar { width: 100%; padding: 1.2rem; font-size: 1.1rem; border: 2px solid #ddd; border-radius: 8px; margin-bottom: 2rem; box-sizing: border-box; outline: none; }
-        .search-bar:focus { border-color: #1a1a1a; }
-        
-        /* Kartlar */
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.5rem; }
-        .card { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; padding-bottom: 1.5rem; transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; }
-        .card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
-        .card img { width: 100%; height: 220px; object-fit: cover; }
-        .card h3 { margin: 1rem 0 0.2rem; color: #1a1a1a; }
-        .card p { margin: 0.3rem; color: #666; font-size: 0.95rem; }
+  /* Unit hint on selects */
+  .select-wrap { position:relative; }
+  .select-wrap select { padding-right:52px; appearance:none; -webkit-appearance:none; }
+  .select-unit { position:absolute; right:14px; top:50%; transform:translateY(-50%); font-size:0.72rem; font-weight:700; color:var(--accent); pointer-events:none; font-family:'Space Mono',monospace; letter-spacing:0.5px; }
+  .select-arrow { position:absolute; right:36px; top:50%; transform:translateY(-50%); font-size:0.6rem; color:var(--muted); pointer-events:none; }
 
-        /* Detay Modalı (Açılır Pencere) */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: white; width: 90%; max-width: 500px; border-radius: 10px; overflow: hidden; position: relative; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; background: #1a1a1a; color: white; }
-        .modal-header h2 { margin: 0; font-size: 1.2rem; }
-        .close-btn { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
-        
-        /* PDF Çıktı Alanı */
-        .printable-area { padding: 1.5rem; }
-        .profile-header { display: flex; align-items: center; gap: 1.5rem; border-bottom: 2px solid #f0f0f0; padding-bottom: 1.5rem; margin-bottom: 1.5rem; }
-        .profile-header img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid #1a1a1a; }
-        .profile-info h3 { margin: 0 0 0.5rem 0; font-size: 1.4rem; }
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.95rem; }
-        .info-item { background: #f9f9f9; padding: 0.8rem; border-radius: 6px; border-left: 3px solid #1a1a1a; }
-        .info-item span { display: block; font-size: 0.8rem; color: #777; margin-bottom: 0.2rem; text-transform: uppercase; font-weight: bold; }
-        
-        .modal-footer { padding: 1rem 1.5rem; background: #f4f7f6; text-align: right; border-top: 1px solid #ddd; }
-        .pdf-btn { background: #d32f2f; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 4px; cursor: pointer; font-weight: bold; display: inline-flex; align-items: center; gap: 0.5rem; }
-        .pdf-btn:hover { background: #b71c1c; }
-    </style>
+  /* Photo upload */
+  .photo-upload { border:2px dashed var(--border); border-radius:14px; padding:32px; text-align:center; cursor:pointer; transition:all 0.2s; position:relative; overflow:hidden; }
+  .photo-upload:hover { border-color:var(--accent); background:rgba(0,212,170,0.04); }
+  .photo-upload input { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+  .photo-upload .upload-icon { font-size:2rem; margin-bottom:8px; }
+  .photo-upload p { color:var(--muted); font-size:0.85rem; }
+  #photo-preview { width:90px; height:90px; border-radius:50%; object-fit:cover; margin:0 auto 12px; border:3px solid var(--accent); display:none; }
+
+  /* Radio */
+  .radio-group { display:flex; gap:12px; flex-wrap:wrap; }
+  .radio-option { display:flex; align-items:center; gap:8px; background:var(--surface2); border:1px solid var(--border); border-radius:9px; padding:9px 14px; cursor:pointer; font-size:0.88rem; font-weight:500; transition:all 0.2s; }
+  .radio-option input { width:auto; }
+  .radio-option:has(input:checked) { border-color:var(--accent); background:rgba(0,212,170,0.1); color:var(--accent); }
+
+  /* ADMIN */
+  .admin-container { max-width:1200px; width:100%; margin:0 auto; padding:32px 24px; }
+  .admin-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:32px; }
+  .admin-header h2 { font-size:1.6rem; font-weight:800; letter-spacing:-0.8px; }
+  .search-bar { display:flex; gap:12px; margin-bottom:28px; }
+  .search-wrap { flex:1; position:relative; }
+  .search-wrap input { padding-left:42px; background:var(--surface); border-color:var(--border); }
+  .search-icon { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--muted); }
+  .stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(155px,1fr)); gap:16px; margin-bottom:32px; }
+  .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:20px; }
+  .stat-num { font-size:2rem; font-weight:800; font-family:'Space Mono',monospace; color:var(--accent); }
+  .stat-label { font-size:0.78rem; color:var(--muted); margin-top:4px; }
+
+  /* Cards */
+  .cards-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(268px,1fr)); gap:20px; }
+  .student-card { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:24px; cursor:pointer; transition:all 0.25s; position:relative; overflow:hidden; }
+  .student-card::before { content:''; position:absolute; inset:0; background:radial-gradient(circle at top right,rgba(0,212,170,0.06),transparent 60%); pointer-events:none; }
+  .student-card:hover { transform:translateY(-4px); border-color:rgba(0,212,170,0.35); box-shadow:var(--card-glow),0 20px 40px rgba(0,0,0,0.3); }
+  .card-top { display:flex; gap:16px; align-items:flex-start; margin-bottom:16px; }
+  .card-avatar { width:62px; height:62px; border-radius:14px; object-fit:cover; border:2.5px solid var(--accent); flex-shrink:0; }
+  .card-avatar-fb { width:62px; height:62px; border-radius:14px; background:linear-gradient(135deg,var(--accent),#006655); display:flex; align-items:center; justify-content:center; font-size:1.4rem; font-weight:700; color:#000; flex-shrink:0; }
+  .card-info h3 { font-size:1rem; font-weight:700; line-height:1.3; margin-bottom:4px; }
+  .card-age { font-size:0.78rem; color:var(--muted); }
+  .card-badge { display:inline-flex; padding:3px 10px; border-radius:100px; font-size:0.7rem; font-weight:700; margin-top:6px; margin-right:4px; background:rgba(0,212,170,0.12); color:var(--accent); border:1px solid rgba(0,212,170,0.2); }
+  .card-badge.red { background:rgba(255,107,53,0.12); color:var(--accent2); border-color:rgba(255,107,53,0.2); }
+  .card-divider { height:1px; background:var(--border); margin:14px 0; }
+  .card-meta { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .card-meta-item label { font-size:0.7rem; color:var(--muted); display:block; margin-bottom:2px; }
+  .card-meta-item span { font-size:0.85rem; font-weight:600; font-family:'Space Mono',monospace; }
+
+  /* LOGIN */
+  #login-screen { align-items:center; justify-content:center; background:radial-gradient(ellipse 70% 70% at 50% 50%,rgba(0,212,170,0.08),transparent 70%),var(--bg); }
+  .login-box { background:var(--surface); border:1px solid var(--border); border-radius:24px; padding:48px 40px; width:100%; max-width:400px; margin:24px; }
+  .login-box h2 { font-size:1.6rem; font-weight:800; margin-bottom:6px; }
+  .login-box p { color:var(--muted); font-size:0.88rem; margin-bottom:32px; }
+  .login-error { background:rgba(255,68,68,0.12); border:1px solid rgba(255,68,68,0.3); border-radius:10px; padding:10px 14px; color:#ff6b6b; font-size:0.85rem; margin-bottom:16px; display:none; }
+
+  /* MODAL */
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(8px); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px; opacity:0; pointer-events:none; transition:opacity 0.2s; }
+  .modal-overlay.open { opacity:1; pointer-events:all; }
+  .modal { background:var(--surface); border:1px solid var(--border); border-radius:24px; width:100%; max-width:620px; max-height:90vh; overflow-y:auto; transform:scale(0.95); transition:transform 0.2s; }
+  .modal-overlay.open .modal { transform:scale(1); }
+  .modal-header { display:flex; align-items:flex-start; justify-content:space-between; padding:28px 28px 0; margin-bottom:20px; }
+  .modal-close { width:36px; height:36px; background:var(--surface2); border:none; border-radius:10px; cursor:pointer; color:var(--muted); font-size:1.1rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.2s; }
+  .modal-close:hover { background:rgba(255,68,68,0.2); color:#ff6b6b; }
+  .modal-body { padding:0 28px 28px; }
+  .detail-hero { display:flex; gap:20px; align-items:center; margin-bottom:24px; }
+  .detail-avatar { width:96px; height:96px; border-radius:20px; object-fit:cover; border:3px solid var(--accent); flex-shrink:0; }
+  .detail-avatar-fb { width:96px; height:96px; border-radius:20px; background:linear-gradient(135deg,var(--accent),#006655); display:flex; align-items:center; justify-content:center; font-size:2.2rem; font-weight:700; color:#000; flex-shrink:0; }
+  .detail-name h2 { font-size:1.5rem; font-weight:800; letter-spacing:-0.5px; }
+  .detail-name p { color:var(--muted); font-size:0.88rem; margin-top:4px; }
+  .detail-name .badges { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .modal-sec { font-size:0.7rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--accent); margin:20px 0 10px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+  .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:4px; }
+  .detail-field { background:var(--surface2); border-radius:12px; padding:14px 16px; }
+  .detail-field label { font-size:0.7rem; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.8px; display:block; margin-bottom:4px; }
+  .detail-field span { font-size:0.95rem; font-weight:600; }
+  .detail-field.full { grid-column:1/-1; }
+  .detail-field.hl span { color:var(--accent); font-family:'Space Mono',monospace; }
+  .detail-field.warn span { color:var(--accent2); }
+  .modal-footer { display:flex; gap:10px; flex-wrap:wrap; padding:20px 28px; border-top:1px solid var(--border); background:rgba(0,0,0,0.2); }
+
+  .success-banner { background:rgba(0,212,170,0.1); border:1px solid rgba(0,212,170,0.3); border-radius:14px; padding:20px 24px; display:none; gap:14px; align-items:flex-start; margin-bottom:24px; }
+  .success-banner.show { display:flex; }
+  .empty-state { text-align:center; padding:80px 24px; color:var(--muted); grid-column:1/-1; }
+  .empty-state .eicon { font-size:3rem; margin-bottom:16px; opacity:0.4; }
+  .empty-state h3 { font-size:1.1rem; margin-bottom:8px; color:var(--text); }
+  .toast { position:fixed; bottom:24px; right:24px; z-index:9999; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 20px; box-shadow:0 8px 32px rgba(0,0,0,0.4); transform:translateY(80px); opacity:0; transition:all 0.3s; pointer-events:none; display:flex; align-items:center; gap:10px; max-width:340px; }
+  .toast.show { transform:translateY(0); opacity:1; }
+
+  @media(max-width:600px) {
+    .form-row,.form-row.triple { grid-template-columns:1fr; }
+    .detail-grid { grid-template-columns:1fr; }
+    .admin-header { flex-direction:column; align-items:flex-start; gap:12px; }
+    nav { padding:12px 16px; }
+  }
+</style>
 </head>
 <body>
 
-    <header>
-        <h1>Altyapı Veri Sistemi</h1>
-        <nav>
-            <button onclick="showSection('form-section')">Veli Ekranı</button>
-            <button onclick="showSection('login-section')">Özkan Hoca Paneli</button>
-        </nav>
-    </header>
+<!-- HOME -->
+<div id="home" class="screen active">
+  <nav>
+    <div class="nav-logo"><div class="icon">⚡</div><span>Spor<span>Kayıt</span></span></div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showScreen('home')">Ana Sayfa</button>
+      <button class="nav-tab" onclick="showScreen('form-screen')">Kayıt Formu</button>
+      <button class="nav-tab" onclick="goAdmin()">Yönetici</button>
+    </div>
+  </nav>
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse 80% 60% at 50% 20%,rgba(0,212,170,0.12) 0%,transparent 60%)">
+    <div class="hero">
+      <div class="hero-badge">⚡ Spor Branş Kayıt Sistemi</div>
+      <h1>Sporcu Verilerini<br><em>Kolayca Yönet</em></h1>
+      <p>Veliler öğrenci bilgilerini ve fotoğraflarını buradan yükler. Yönetici tüm kayıtları görüntüler, arar ve PDF olarak dışa aktarır.</p>
+      <div class="hero-btns">
+        <button class="btn btn-primary" onclick="showScreen('form-screen')">📋 Öğrenci Kaydı Oluştur</button>
+        <button class="btn btn-outline" onclick="goAdmin()">🔐 Yönetici Girişi</button>
+      </div>
+    </div>
+  </div>
+</div>
 
-    <div class="container">
-        
-        <div id="form-section" class="form-section">
-            <h2 style="margin-top: 0;">Yeni Sporcu Kaydı</h2>
-            <p style="color:#666; margin-bottom:1.5rem;">Lütfen öğrencinin güncel bilgilerini eksiksiz doldurun.</p>
-            
-            <div class="form-grid">
-                <div class="form-group full-width">
-                    <label>Öğrenci Adı Soyadı</label>
-                    <input type="text" placeholder="Örn: Ege Kaan Yılmaz">
-                </div>
-                <div class="form-group">
-                    <label>Doğum Tarihi</label>
-                    <input type="date">
-                </div>
-                <div class="form-group">
-                    <label>Doğum Yeri</label>
-                    <input type="text" placeholder="Örn: İstanbul">
-                </div>
-                <div class="form-group">
-                    <label>Boy (cm)</label>
-                    <input type="number" placeholder="Örn: 145">
-                </div>
-                <div class="form-group">
-                    <label>Kilo (kg)</label>
-                    <input type="number" placeholder="Örn: 38">
-                </div>
-                <div class="form-group">
-                    <label>Kan Grubu</label>
-                    <select>
-                        <option>Seçiniz</option>
-                        <option>0 Rh(+)</option><option>0 Rh(-)</option>
-                        <option>A Rh(+)</option><option>A Rh(-)</option>
-                        <option>B Rh(+)</option><option>B Rh(-)</option>
-                        <option>AB Rh(+)</option><option>AB Rh(-)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Sürekli Kullandığı İlaç</label>
-                    <input type="text" placeholder="Yoksa 'Yok' yazınız">
-                </div>
-                <div class="form-group full-width">
-                    <label>Alerji Durumu</label>
-                    <input type="text" placeholder="Bilinen bir alerjisi var mı?">
-                </div>
-                <div class="form-group full-width">
-                    <label>Vesikalık / Profil Fotoğrafı</label>
-                    <input type="file" accept="image/*" style="padding: 0.5rem; border: 1px dashed #ccc;">
-                </div>
-            </div>
-            <button class="submit-btn" onclick="alert('Önizleme modu: Veriler alındı.')">Bilgileri Gönder</button>
-        </div>
-
-        <div id="login-section" class="login-section">
-            <h2>Yönetici Girişi</h2>
-            <p style="color:#666;">Panele erişmek için şifrenizi giriniz.</p>
-            <input type="password" id="adminPassword" placeholder="Şifre: 1234">
-            <button class="submit-btn" onclick="checkPassword()">Giriş Yap</button>
-        </div>
-
-        <div id="admin-section" class="admin-section">
-            <h2>Sporcu Veritabanı</h2>
-            <input type="text" id="searchInput" class="search-bar" placeholder="İsimle öğrenci aratın (Örn: Caner)..." onkeyup="filterStudents()">
-            <div class="grid" id="studentGrid"></div>
-        </div>
-
+<!-- FORM -->
+<div id="form-screen" class="screen">
+  <nav>
+    <div class="nav-logo"><div class="icon">⚡</div><span>Spor<span>Kayıt</span></span></div>
+    <div class="nav-tabs">
+      <button class="nav-tab" onclick="showScreen('home')">Ana Sayfa</button>
+      <button class="nav-tab active">Kayıt Formu</button>
+      <button class="nav-tab" onclick="goAdmin()">Yönetici</button>
+    </div>
+  </nav>
+  <div class="form-container">
+    <div class="success-banner" id="success-banner">
+      <div style="font-size:1.5rem">✅</div>
+      <div><strong>Kayıt Başarıyla Tamamlandı!</strong><div style="color:var(--muted);font-size:0.85rem;margin-top:4px">Öğrenci bilgileri sisteme eklendi.</div></div>
+    </div>
+    <div class="form-header">
+      <h2>Öğrenci Kayıt Formu</h2>
+      <p>Lütfen tüm alanları eksiksiz doldurunuz.</p>
     </div>
 
-    <div id="studentModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Sporcu Detay Kartı</h2>
-                <button class="close-btn" onclick="closeModal()">&times;</button>
-            </div>
-            <div id="printable-area" class="printable-area">
-                </div>
-            <div class="modal-footer">
-                <button class="pdf-btn" onclick="downloadPDF()">📄 PDF Olarak İndir</button>
-            </div>
+    <!-- Fotoğraf -->
+    <div class="form-section">
+      <div class="form-section-title">📷 Fotoğraf</div>
+      <div class="photo-upload" onclick="document.getElementById('photo-input').click()">
+        <input type="file" id="photo-input" accept="image/*" onchange="handlePhoto(event)">
+        <img id="photo-preview">
+        <div id="photo-placeholder">
+          <div class="upload-icon">📸</div>
+          <p>Fotoğraf yüklemek için tıklayın</p>
+          <p style="font-size:0.75rem;margin-top:4px;color:#444">JPG, PNG — Maks 5MB</p>
         </div>
+      </div>
     </div>
 
-    <script>
-        // Rastgele detaylı öğrenci veritabanı
-        const students = [
-            { id: 1, name: "Mert Yılmaz", dob: "12.05.2015", pob: "İstanbul", height: 135, weight: 32, blood: "A Rh(+)", meds: "Yok", allergy: "Polen", team: "Beşiktaş Altyapı", parent: "Ayşe Yılmaz", photo: "https://i.pravatar.cc/250?img=11" },
-            { id: 2, name: "Caner Aydın", dob: "24.08.2014", pob: "Ankara", height: 142, weight: 36, blood: "0 Rh(+)", meds: "Astım İlacı", allergy: "Yok", team: "Sarıyer Spor Okulu", parent: "Mehmet Aydın", photo: "https://i.pravatar.cc/250?img=12" },
-            { id: 3, name: "Ali Kerem", dob: "03.11.2016", pob: "İzmir", height: 128, weight: 28, blood: "B Rh(-)", meds: "Yok", allergy: "Fıstık", team: "Beşiktaş Altyapı", parent: "Ahmet Kerem", photo: "https://i.pravatar.cc/250?img=13" }
-        ];
+    <!-- Kişisel -->
+    <div class="form-section">
+      <div class="form-section-title">👤 Kişisel Bilgiler</div>
+      <div class="form-row">
+        <div class="form-group"><label>Ad</label><input type="text" id="f-firstname" placeholder="Ahmet"></div>
+        <div class="form-group"><label>Soyad</label><input type="text" id="f-lastname" placeholder="Yılmaz"></div>
+      </div>
+      <div style="margin-top:14px">
+        <div class="form-section-title" style="font-size:0.72rem;margin-bottom:12px">📅 Doğum Tarihi</div>
+        <div class="form-row triple">
+          <div class="form-group">
+            <label>Gün</label>
+            <select id="f-day"><option value="">Gün</option><script>for(let i=1;i<=31;i++) document.write(`<option>${i}</option>`)</script></select>
+          </div>
+          <div class="form-group">
+            <label>Ay</label>
+            <select id="f-month">
+              <option value="">Ay</option>
+              <option value="1">Ocak</option><option value="2">Şubat</option><option value="3">Mart</option>
+              <option value="4">Nisan</option><option value="5">Mayıs</option><option value="6">Haziran</option>
+              <option value="7">Temmuz</option><option value="8">Ağustos</option><option value="9">Eylül</option>
+              <option value="10">Ekim</option><option value="11">Kasım</option><option value="12">Aralık</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Yıl</label>
+            <select id="f-year"><option value="">Yıl</option><script>for(let i=2025;i>=2000;i--) document.write(`<option>${i}</option>`)</script></select>
+          </div>
+        </div>
+      </div>
+      <div class="form-row" style="margin-top:12px">
+        <div class="form-group"><label>Doğum Yeri</label><input type="text" id="f-birthplace" placeholder="İstanbul"></div>
+        <div class="form-group">
+          <label>Kan Grubu</label>
+          <select id="f-blood">
+            <option value="">Seçiniz</option>
+            <option>A Rh+</option><option>A Rh-</option><option>B Rh+</option><option>B Rh-</option>
+            <option>AB Rh+</option><option>AB Rh-</option><option>0 Rh+</option><option>0 Rh-</option>
+          </select>
+        </div>
+      </div>
+    </div>
 
-        const grid = document.getElementById('studentGrid');
-        const modal = document.getElementById('studentModal');
-        const printableArea = document.getElementById('printable-area');
+    <!-- Fiziksel — açılır menü -->
+    <div class="form-section">
+      <div class="form-section-title">📏 Fiziksel Bilgiler</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Boy</label>
+          <div class="select-wrap">
+            <select id="f-height">
+              <option value="">Seçiniz</option>
+              <script>for(let i=80;i<=220;i++) document.write(`<option value="${i}">${i}</option>`)</script>
+            </select>
+            <span class="select-unit">cm</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Kilo</label>
+          <div class="select-wrap">
+            <select id="f-weight">
+              <option value="">Seçiniz</option>
+              <script>for(let i=15;i<=150;i++) document.write(`<option value="${i}">${i}</option>`)</script>
+            </select>
+            <span class="select-unit">kg</span>
+          </div>
+        </div>
+      </div>
+    </div>
 
-        // Kartları Çiz
-        function renderStudents(data) {
-            grid.innerHTML = '';
-            if(data.length === 0) {
-                grid.innerHTML = '<p style="color:#666; grid-column: 1 / -1;">Bu isimde bir sporcu bulunamadı.</p>';
-                return;
-            }
-            data.forEach(student => {
-                const card = document.createElement('div');
-                card.className = 'card';
-                // Karta tıklama özelliği eklendi
-                card.onclick = () => openModal(student.id);
-                card.innerHTML = `
-                    <img src="${student.photo}" alt="${student.name}">
-                    <h3>${student.name}</h3>
-                    <p><strong>D. Tarihi:</strong> ${student.dob}</p>
-                    <p style="font-size:0.8rem; color:#888; margin-top:10px;">Detay için tıklayın</p>
-                `;
-                grid.appendChild(card);
-            });
-        }
+    <!-- Sağlık -->
+    <div class="form-section">
+      <div class="form-section-title">🏥 Sağlık Bilgileri</div>
+      <div class="form-group" style="margin-bottom:14px">
+        <label>Kullandığı İlaç Var Mı?</label>
+        <div class="radio-group">
+          <label class="radio-option"><input type="radio" name="medication" value="Yok" checked> Yok</label>
+          <label class="radio-option"><input type="radio" name="medication" value="Var"> Var</label>
+        </div>
+      </div>
+      <div class="form-group" id="medication-detail-group" style="margin-bottom:14px;display:none">
+        <label>İlaç Detayı</label>
+        <input type="text" id="f-medication-detail" placeholder="İlaç adı ve kullanım şekli">
+      </div>
+      <div class="form-group" style="margin-bottom:14px">
+        <label>Alerjisi Var Mı?</label>
+        <div class="radio-group">
+          <label class="radio-option"><input type="radio" name="allergy" value="Yok" checked> Yok</label>
+          <label class="radio-option"><input type="radio" name="allergy" value="Var"> Var</label>
+        </div>
+      </div>
+      <div class="form-group" id="allergy-detail-group" style="display:none">
+        <label>Alerji Detayı</label>
+        <input type="text" id="f-allergy-detail" placeholder="Alerji türü">
+      </div>
+    </div>
 
-        // Arama Filtresi
-        function filterStudents() {
-            const query = document.getElementById('searchInput').value.toLowerCase();
-            const filtered = students.filter(s => s.name.toLowerCase().includes(query));
-            renderStudents(filtered);
-        }
+    <!-- Veli -->
+    <div class="form-section">
+      <div class="form-section-title">👨‍👩‍👦 Veli Bilgileri</div>
+      <div class="form-row">
+        <div class="form-group"><label>Veli Adı Soyadı</label><input type="text" id="f-parent" placeholder="Mehmet Yılmaz"></div>
+        <div class="form-group"><label>Telefon</label><input type="tel" id="f-phone" placeholder="0532 123 45 67"></div>
+      </div>
+      <div class="form-group" style="margin-top:12px">
+        <label>Adres</label>
+        <textarea id="f-address" placeholder="Mahalle, cadde, sokak, kapı no, ilçe / il..." style="min-height:72px"></textarea>
+      </div>
+      <div class="form-group" style="margin-top:12px">
+        <label>Ek Notlar (isteğe bağlı)</label>
+        <textarea id="f-notes" placeholder="Ek bilgi veya özel durumlar..."></textarea>
+      </div>
+    </div>
 
-        // Şifre Kontrolü
-        function checkPassword() {
-            const pass = document.getElementById('adminPassword').value;
-            if(pass === '1234') {
-                document.getElementById('login-section').style.display = 'none';
-                document.getElementById('admin-section').style.display = 'block';
-                document.getElementById('adminPassword').value = ''; // Şifreyi temizle
-                renderStudents(students);
-            } else {
-                alert('Hatalı şifre girdiniz. Önizleme için şifre: 1234');
-            }
-        }
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:16px" onclick="submitForm()">✅ Kaydı Tamamla</button>
+  </div>
+</div>
 
-        // Sayfa Geçişleri
-        function showSection(sectionId) {
-            document.getElementById('form-section').style.display = 'none';
-            document.getElementById('admin-section').style.display = 'none';
-            document.getElementById('login-section').style.display = 'none';
-            document.getElementById(sectionId).style.display = 'block';
-        }
+<!-- LOGIN -->
+<div id="login-screen" class="screen">
+  <nav>
+    <div class="nav-logo"><div class="icon">⚡</div><span>Spor<span>Kayıt</span></span></div>
+    <div class="nav-tabs">
+      <button class="nav-tab" onclick="showScreen('home')">Ana Sayfa</button>
+      <button class="nav-tab" onclick="showScreen('form-screen')">Kayıt Formu</button>
+      <button class="nav-tab active">Yönetici</button>
+    </div>
+  </nav>
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;">
+    <div class="login-box">
+      <div style="font-size:2rem;margin-bottom:16px">🔐</div>
+      <h2>Yönetici Girişi</h2>
+      <p>Panele erişmek için şifrenizi girin.</p>
+      <div class="login-error" id="login-error">❌ Hatalı şifre. Tekrar deneyin.</div>
+      <div class="form-group" style="margin-bottom:16px">
+        <label>Şifre</label>
+        <input type="password" id="admin-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')checkLogin()">
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="checkLogin()">Giriş Yap →</button>
+      <button class="btn btn-outline" style="width:100%;justify-content:center;margin-top:8px" onclick="showScreen('home')">← Geri Dön</button>
+      <div style="margin-top:20px;padding:12px;background:rgba(0,212,170,0.07);border-radius:10px;font-size:0.8rem;color:var(--muted)">
+        💡 Demo şifre: <strong style="color:var(--accent)">admin123</strong>
+      </div>
+    </div>
+  </div>
+</div>
 
-        // Modalı Aç ve Öğrenci Detaylarını Doldur
-        function openModal(id) {
-            const student = students.find(s => s.id === id);
-            
-            printableArea.innerHTML = `
-                <div class="profile-header">
-                    <img src="${student.photo}" alt="Foto">
-                    <div class="profile-info">
-                        <h3>${student.name}</h3>
-                        <p style="margin:0; color:#666;">${student.team} | Veli: ${student.parent}</p>
-                    </div>
-                </div>
-                <div class="info-grid">
-                    <div class="info-item"><span>Doğum Tarihi</span>${student.dob}</div>
-                    <div class="info-item"><span>Doğum Yeri</span>${student.pob}</div>
-                    <div class="info-item"><span>Boy / Kilo</span>${student.height} cm / ${student.weight} kg</div>
-                    <div class="info-item"><span>Kan Grubu</span>${student.blood}</div>
-                    <div class="info-item"><span>Sürekli İlaç</span>${student.meds}</div>
-                    <div class="info-item"><span>Alerji Durumu</span>${student.allergy}</div>
-                </div>
-            `;
-            modal.style.display = 'flex';
-        }
+<!-- ADMIN -->
+<div id="admin-screen" class="screen">
+  <nav>
+    <div class="nav-logo"><div class="icon">⚡</div><span>Spor<span>Kayıt</span></span></div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span style="font-size:0.8rem;color:var(--muted)">Yönetici Paneli</span>
+      <button class="btn btn-outline btn-sm" onclick="showScreen('home')">← Çıkış</button>
+    </div>
+  </nav>
+  <div class="admin-container">
+    <div class="admin-header">
+      <h2>Sporcu Kayıtları</h2>
+      <button class="btn btn-primary btn-sm" onclick="showScreen('form-screen')">+ Yeni Kayıt</button>
+    </div>
+    <div class="stats-row" id="stats-row"></div>
+    <div class="search-bar">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-input" placeholder="Ad, veli veya şehir ara..." oninput="filterStudents()">
+      </div>
+    </div>
+    <div class="cards-grid" id="cards-grid"></div>
+  </div>
+</div>
 
-        // Modalı Kapat
-        function closeModal() {
-            modal.style.display = 'none';
-        }
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div id="modal-title"></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-primary btn-sm" onclick="exportPDF()">📄 PDF Olarak İndir</button>
+      <button class="btn btn-outline btn-sm" onclick="closeModal()">Kapat</button>
+    </div>
+  </div>
+</div>
 
-        // PDF İndirme Fonksiyonu
-        function downloadPDF() {
-            const element = document.getElementById('printable-area');
-            const studentName = element.querySelector('.profile-info h3').innerText;
-            
-            // html2pdf ayarları
-            const opt = {
-                margin:       0.5,
-                filename:     studentName.replace(/ /g, '_') + '_Profil.pdf',
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2 },
-                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-            };
+<div class="toast" id="toast"></div>
 
-            // PDF oluştur ve indir
-            html2pdf().set(opt).from(element).save();
-        }
+<script>
+const MONTHS = ['','Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 
-        // İlk açılış
-        renderStudents(students);
-    </script>
+// Sabit seed'li Picsum fotoğrafları — her seferinde aynı görsel gelir
+const SEEDS = ['sporcu_emre_k','sporcu_zeynep_a','sporcu_mert_d','sporcu_elif_s','sporcu_burak_y','sporcu_selin_c'];
+const avatarUrl = seed => `https://picsum.photos/seed/${seed}/200/200`;
+
+const DEMO_STUDENTS = [
+  { id:1, firstName:'Emre', lastName:'Kaya', birthDay:15, birthMonth:3, birthYear:2015, birthPlace:'İstanbul', blood:'A Rh+', height:142, weight:38, medication:'Yok', medicationDetail:'', allergy:'Yok', allergyDetail:'', parent:'Hasan Kaya', phone:'0532 111 22 33', address:'Bağdat Cad. No:42 D:3, Kadıköy / İstanbul', notes:'', avatarSeed:SEEDS[0], photo:null, registeredAt:'2025-09-01' },
+  { id:2, firstName:'Zeynep', lastName:'Arslan', birthDay:22, birthMonth:7, birthYear:2014, birthPlace:'Ankara', blood:'B Rh+', height:151, weight:44, medication:'Var', medicationDetail:'Ventolin inhaler — astım için', allergy:'Var', allergyDetail:'Polen alerjisi', parent:'Fatma Arslan', phone:'0541 222 33 44', address:'Atatürk Bulvarı No:88 D:5, Çankaya / Ankara', notes:'Yoğun egzersizlerde inhaler yanında olmalı.', avatarSeed:SEEDS[1], photo:null, registeredAt:'2025-09-02' },
+  { id:3, firstName:'Mert', lastName:'Demir', birthDay:8, birthMonth:11, birthYear:2016, birthPlace:'İzmir', blood:'0 Rh+', height:135, weight:32, medication:'Yok', medicationDetail:'', allergy:'Yok', allergyDetail:'', parent:'Ali Demir', phone:'0545 333 44 55', address:'Kıbrıs Şehitleri Cad. No:14, Konak / İzmir', notes:'', avatarSeed:SEEDS[2], photo:null, registeredAt:'2025-09-03' },
+  { id:4, firstName:'Elif', lastName:'Şahin', birthDay:30, birthMonth:1, birthYear:2015, birthPlace:'Bursa', blood:'AB Rh+', height:148, weight:41, medication:'Yok', medicationDetail:'', allergy:'Var', allergyDetail:'Fıstık alerjisi — EpiPen taşıyor', parent:'Ayşe Şahin', phone:'0552 444 55 66', address:'Atatürk Cad. No:7 D:2, Nilüfer / Bursa', notes:'Anafilaksi riski. Antrenör EpiPen konumunu bilmeli.', avatarSeed:SEEDS[3], photo:null, registeredAt:'2025-09-04' },
+  { id:5, firstName:'Burak', lastName:'Yıldız', birthDay:19, birthMonth:5, birthYear:2013, birthPlace:'Adana', blood:'A Rh-', height:162, weight:52, medication:'Yok', medicationDetail:'', allergy:'Yok', allergyDetail:'', parent:'Mustafa Yıldız', phone:'0533 555 66 77', address:'Turhan Cemal Beriker Bulv. No:33, Seyhan / Adana', notes:'', avatarSeed:SEEDS[4], photo:null, registeredAt:'2025-09-05' },
+  { id:6, firstName:'Selin', lastName:'Çelik', birthDay:4, birthMonth:9, birthYear:2016, birthPlace:'Trabzon', blood:'0 Rh-', height:130, weight:28, medication:'Var', medicationDetail:'Ritalin — dikkat eksikliği için', allergy:'Yok', allergyDetail:'', parent:'Nermin Çelik', phone:'0506 666 77 88', address:'Uzun Sokak No:5 D:1, Ortahisar / Trabzon', notes:'', avatarSeed:SEEDS[5], photo:null, registeredAt:'2025-09-06' },
+];
+
+let students = JSON.parse(localStorage.getItem('spor_v3') || 'null') || DEMO_STUDENTS;
+let nextId = Math.max(...students.map(s=>s.id)) + 1;
+let currentStudent = null;
+let photoData = null;
+
+const save = () => localStorage.setItem('spor_v3', JSON.stringify(students));
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function goAdmin() { showScreen('login-screen'); }
+function checkLogin() {
+  if (document.getElementById('admin-pass').value === 'admin123') {
+    document.getElementById('login-error').style.display = 'none';
+    document.getElementById('admin-pass').value = '';
+    renderAdmin(); showScreen('admin-screen');
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+  }
+}
+
+document.querySelectorAll('input[name="medication"]').forEach(r=>r.addEventListener('change',e=>{
+  document.getElementById('medication-detail-group').style.display = e.target.value==='Var'?'flex':'none';
+}));
+document.querySelectorAll('input[name="allergy"]').forEach(r=>r.addEventListener('change',e=>{
+  document.getElementById('allergy-detail-group').style.display = e.target.value==='Var'?'flex':'none';
+}));
+
+function handlePhoto(e) {
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    photoData = ev.target.result;
+    const p = document.getElementById('photo-preview');
+    p.src = photoData; p.style.display = 'block';
+    document.getElementById('photo-placeholder').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function submitForm() {
+  const fn = document.getElementById('f-firstname').value.trim();
+  const ln = document.getElementById('f-lastname').value.trim();
+  if (!fn||!ln) { showToast('⚠️ Ad ve soyad zorunludur.'); return; }
+  const med = document.querySelector('input[name="medication"]:checked').value;
+  const all = document.querySelector('input[name="allergy"]:checked').value;
+  students.push({
+    id:nextId++, firstName:fn, lastName:ln,
+    birthDay:parseInt(document.getElementById('f-day').value)||null,
+    birthMonth:parseInt(document.getElementById('f-month').value)||null,
+    birthYear:parseInt(document.getElementById('f-year').value)||null,
+    birthPlace:document.getElementById('f-birthplace').value.trim(),
+    blood:document.getElementById('f-blood').value,
+    height:parseInt(document.getElementById('f-height').value)||null,
+    weight:parseInt(document.getElementById('f-weight').value)||null,
+    medication:med, medicationDetail:document.getElementById('f-medication-detail').value.trim(),
+    allergy:all, allergyDetail:document.getElementById('f-allergy-detail').value.trim(),
+    parent:document.getElementById('f-parent').value.trim(),
+    phone:document.getElementById('f-phone').value.trim(),
+    address:document.getElementById('f-address').value.trim(),
+    notes:document.getElementById('f-notes').value.trim(),
+    photo:photoData, avatarSeed:null,
+    registeredAt:new Date().toISOString().split('T')[0]
+  });
+  save(); photoData = null;
+  ['f-firstname','f-lastname','f-birthplace','f-medication-detail','f-allergy-detail','f-parent','f-phone','f-address','f-notes']
+    .forEach(id=>document.getElementById(id).value='');
+  ['f-day','f-month','f-year','f-blood','f-height','f-weight']
+    .forEach(id=>document.getElementById(id).value='');
+  document.getElementById('photo-preview').style.display='none';
+  document.getElementById('photo-placeholder').style.display='block';
+  const banner = document.getElementById('success-banner');
+  banner.classList.add('show');
+  setTimeout(()=>banner.classList.remove('show'),4000);
+}
+
+function calcAge(y,m,d) {
+  if(!y) return '—';
+  const t = new Date(); let age = t.getFullYear()-y;
+  if(m&&d&&(t.getMonth()+1<m||(t.getMonth()+1===m&&t.getDate()<d))) age--;
+  return age+' yaş';
+}
+
+function imgSrc(s) { return s.photo || (s.avatarSeed ? avatarUrl(s.avatarSeed) : null); }
+
+function avatarCard(s) {
+  const src = imgSrc(s);
+  const init = (s.firstName[0]+s.lastName[0]).toUpperCase();
+  if(src) return `<img class="card-avatar" src="${src}" alt="" onerror="this.outerHTML='<div class=card-avatar-fb>${init}</div>'">`;
+  return `<div class="card-avatar-fb">${init}</div>`;
+}
+
+function avatarDetail(s) {
+  const src = imgSrc(s);
+  const init = (s.firstName[0]+s.lastName[0]).toUpperCase();
+  if(src) return `<img class="detail-avatar" src="${src}" alt="" onerror="this.outerHTML='<div class=detail-avatar-fb>${init}</div>'">`;
+  return `<div class="detail-avatar-fb">${init}</div>`;
+}
+
+function renderAdmin() {
+  const wa = students.filter(s=>s.allergy==='Var').length;
+  const wm = students.filter(s=>s.medication==='Var').length;
+  document.getElementById('stats-row').innerHTML = `
+    <div class="stat-card"><div class="stat-num">${students.length}</div><div class="stat-label">Toplam Sporcu</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--accent2)">${wa}</div><div class="stat-label">Alerji Kaydı</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:#fbbf24">${wm}</div><div class="stat-label">İlaç Kullanan</div></div>
+    <div class="stat-card"><div class="stat-num">${new Date().toLocaleDateString('tr-TR')}</div><div class="stat-label">Güncelleme Tarihi</div></div>`;
+  renderCards(students);
+}
+
+function renderCards(list) {
+  const g = document.getElementById('cards-grid');
+  if(!list.length) { g.innerHTML=`<div class="empty-state"><div class="eicon">🔍</div><h3>Sonuç Bulunamadı</h3><p>Farklı bir arama deneyin.</p></div>`; return; }
+  g.innerHTML = list.map(s=>{
+    const badges = (s.allergy==='Var'?`<span class="card-badge red">⚠️ Alerji</span>`:'')+
+                   (s.medication==='Var'?`<span class="card-badge">💊 İlaç</span>`:'');
+    return `<div class="student-card" onclick="openModal(${s.id})">
+      <div class="card-top">
+        ${avatarCard(s)}
+        <div class="card-info">
+          <h3>${s.firstName} ${s.lastName}</h3>
+          <div class="card-age">${calcAge(s.birthYear,s.birthMonth,s.birthDay)}</div>
+          <div style="margin-top:6px">${badges}</div>
+        </div>
+      </div>
+      <div class="card-divider"></div>
+      <div class="card-meta">
+        <div class="card-meta-item"><label>Kan Grubu</label><span>${s.blood||'—'}</span></div>
+        <div class="card-meta-item"><label>Boy / Kilo</label><span>${s.height||'—'}/${s.weight||'—'}</span></div>
+        <div class="card-meta-item"><label>Doğum Yeri</label><span>${s.birthPlace||'—'}</span></div>
+        <div class="card-meta-item"><label>Kayıt</label><span>${s.registeredAt}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterStudents() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  renderCards(students.filter(s=>
+    `${s.firstName} ${s.lastName}`.toLowerCase().includes(q)||
+    (s.birthPlace||'').toLowerCase().includes(q)||
+    (s.parent||'').toLowerCase().includes(q)||
+    (s.address||'').toLowerCase().includes(q)
+  ));
+}
+
+function openModal(id) {
+  currentStudent = students.find(s=>s.id===id); if(!currentStudent) return;
+  const s = currentStudent;
+  const bd = s.birthDay ? `${s.birthDay} ${MONTHS[s.birthMonth]} ${s.birthYear}` : '—';
+  const badges = (s.allergy==='Var'?`<span class="card-badge red">⚠️ Alerji Var</span>`:'')+
+                 (s.medication==='Var'?`<span class="card-badge">💊 İlaç Kullanıyor</span>`:'');
+
+  document.getElementById('modal-title').innerHTML = `
+    <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Sporcu Profili</div>
+    <div style="font-size:1.4rem;font-weight:800">${s.firstName} ${s.lastName}</div>`;
+
+  document.getElementById('modal-body').innerHTML = `
+    <div class="detail-hero">
+      ${avatarDetail(s)}
+      <div class="detail-name">
+        <h2>${s.firstName} ${s.lastName}</h2>
+        <p>${calcAge(s.birthYear,s.birthMonth,s.birthDay)} · ${bd}</p>
+        <div class="badges">${badges}</div>
+      </div>
+    </div>
+
+    <div class="modal-sec">Kişisel Bilgiler</div>
+    <div class="detail-grid">
+      <div class="detail-field"><label>Doğum Tarihi</label><span>${bd}</span></div>
+      <div class="detail-field"><label>Doğum Yeri</label><span>${s.birthPlace||'—'}</span></div>
+      <div class="detail-field hl"><label>Kan Grubu</label><span>${s.blood||'—'}</span></div>
+      <div class="detail-field"><label>Yaş</label><span>${calcAge(s.birthYear,s.birthMonth,s.birthDay)}</span></div>
+    </div>
+
+    <div class="modal-sec">Fiziksel Bilgiler</div>
+    <div class="detail-grid">
+      <div class="detail-field hl"><label>Boy</label><span>${s.height?s.height+' cm':'—'}</span></div>
+      <div class="detail-field hl"><label>Kilo</label><span>${s.weight?s.weight+' kg':'—'}</span></div>
+    </div>
+
+    <div class="modal-sec">Sağlık Bilgileri</div>
+    <div class="detail-grid">
+      <div class="detail-field ${s.medication==='Var'?'warn':''}"><label>İlaç Durumu</label><span>${s.medication||'—'}</span></div>
+      <div class="detail-field ${s.allergy==='Var'?'warn':''}"><label>Alerji Durumu</label><span>${s.allergy||'—'}</span></div>
+      ${s.medicationDetail?`<div class="detail-field full warn"><label>İlaç Detayı</label><span>${s.medicationDetail}</span></div>`:''}
+      ${s.allergyDetail?`<div class="detail-field full warn"><label>Alerji Detayı</label><span>${s.allergyDetail}</span></div>`:''}
+    </div>
+
+    <div class="modal-sec">Veli Bilgileri</div>
+    <div class="detail-grid">
+      <div class="detail-field"><label>Veli Adı</label><span>${s.parent||'—'}</span></div>
+      <div class="detail-field"><label>Telefon</label><span>${s.phone||'—'}</span></div>
+      ${s.address?`<div class="detail-field full"><label>Adres</label><span style="font-family:inherit;font-size:0.9rem;line-height:1.5">${s.address}</span></div>`:''}
+      ${s.notes?`<div class="detail-field full"><label>Notlar</label><span style="font-family:inherit;font-size:0.9rem;line-height:1.5">${s.notes}</span></div>`:''}
+    </div>
+    <div style="font-size:0.73rem;color:var(--muted);margin-top:8px">Kayıt tarihi: ${s.registeredAt}</div>`;
+
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  currentStudent = null;
+}
+
+function exportPDF() {
+  if(!currentStudent) return;
+  const s = currentStudent;
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({unit:'mm',format:'a4'});
+  const bd = s.birthDay ? `${s.birthDay} ${MONTHS[s.birthMonth]} ${s.birthYear}` : '—';
+
+  // Header
+  doc.setFillColor(0,212,170); doc.rect(0,0,210,42,'F');
+  doc.setTextColor(0,0,0); doc.setFont('helvetica','bold'); doc.setFontSize(20);
+  doc.text('SPORCU KAYIT FORMU', 20,18);
+  doc.setFontSize(12); doc.text(`${s.firstName} ${s.lastName}`, 20,30);
+  doc.setFontSize(8); doc.setFont('helvetica','normal');
+  doc.text(`Kayıt Tarihi: ${s.registeredAt}`, 20,38);
+
+  const src = imgSrc(s);
+  if(src) { try { doc.addImage(src,'JPEG',163,5,34,34); } catch(e){} }
+
+  let y=54;
+  const sec=(t)=>{ doc.setFillColor(232,252,248); doc.rect(14,y-5,182,11,'F'); doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(0,130,100); doc.text(t,18,y+2); y+=13; };
+  const r2=(l1,v1,l2,v2,w1=false,w2=false)=>{
+    doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(120,140,160);
+    doc.text(l1.toUpperCase(),20,y); doc.text(l2.toUpperCase(),110,y);
+    doc.setFont('helvetica','normal'); doc.setFontSize(11);
+    doc.setTextColor(w1?180:30,w1?60:30,w1?0:30); doc.text(v1||'—',20,y+7);
+    doc.setTextColor(w2?180:30,w2?60:30,w2?0:30); doc.text(v2||'—',110,y+7);
+    y+=18;
+  };
+  const r1=(l,v,w=false)=>{
+    doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(120,140,160); doc.text(l.toUpperCase(),20,y);
+    doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(w?180:30,w?60:30,w?0:30);
+    const lines=doc.splitTextToSize(v||'—',170); doc.text(lines,20,y+7); y+=10+(lines.length-1)*6;
+  };
+
+  sec('KİŞİSEL BİLGİLER');
+  r2('Doğum Tarihi',bd,'Doğum Yeri',s.birthPlace||'—');
+  r2('Kan Grubu',s.blood||'—','Yaş',calcAge(s.birthYear,s.birthMonth,s.birthDay));
+  sec('FİZİKSEL BİLGİLER');
+  r2('Boy',s.height?s.height+' cm':'—','Kilo',s.weight?s.weight+' kg':'—');
+  sec('SAĞLIK BİLGİLERİ');
+  r2('İlaç Durumu',s.medication||'—','Alerji Durumu',s.allergy||'—',s.medication==='Var',s.allergy==='Var');
+  if(s.medicationDetail) r1('İlaç Detayı',s.medicationDetail,true);
+  if(s.allergyDetail) r1('Alerji Detayı',s.allergyDetail,true);
+  sec('VELİ BİLGİLERİ');
+  r2('Veli Adı',s.parent||'—','Telefon',s.phone||'—');
+  if(s.address) r1('Adres',s.address);
+  if(s.notes) r1('Notlar',s.notes);
+
+  doc.setFillColor(245,245,245); doc.rect(0,273,210,24,'F');
+  doc.setTextColor(160,160,160); doc.setFontSize(8); doc.setFont('helvetica','normal');
+  doc.text(`SporeKayıt Sistemi  |  ${new Date().toLocaleString('tr-TR')}`,20,284);
+
+  doc.save(`${s.firstName}_${s.lastName}_sporcu.pdf`);
+  showToast('📄 PDF indirildi!');
+}
+
+function showToast(msg) {
+  const t=document.getElementById('toast'); t.textContent=msg;
+  t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+showScreen('home');
+</script>
 </body>
 </html>
